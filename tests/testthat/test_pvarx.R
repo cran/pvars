@@ -57,8 +57,9 @@ test_that("aux_pvec() and VECM() return identical RRR estimates when aux_2StepBR
   for(i in names_i){  # not considered:
     R.est$L.varx[[i]]$RRR = L.var[[i]]$RRR = NULL  # via_R0_R1=TRUE/FALSE
     R.est$L.varx[[i]]$RRR = L.var[[i]]$RRR = NULL
-    L.var[[i]]$PARTIAL = NULL
-    L.var[[i]]$MARGINAL = NULL
+    L.var[[i]]$args_varx = NULL
+    L.var[[i]]$PARTIAL   = NULL
+    L.var[[i]]$MARGINAL  = NULL
   }
   expect_equal(ignore_attr=TRUE, R.est$L.varx, L.var)
 })

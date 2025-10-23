@@ -103,6 +103,7 @@ pvarx.VAR <- function(L.data, lags, type=c("const", "trend", "both", "none"),
   R.mgB = aux_MG(R.est$L.varx, idx_par="B")
   
   # return result
+  for(i in names_i){ R.est$L.varx[[i]]$args_varx = list(method="solve", type=type, t_D=L.t_D[[i]]) }
   args_pvarx = list(method="MG of VAR", type=type, dim_K=R.est$L.varx[[1]]$dim_K, 
                     dim_N=dim_N, n.factors=n.factors, n.iterations=R.est$n.iterations, w=NULL)
   result = list(A=R.mgA$mean, B=R.mgB$mean, MG_A=R.mgA, MG_B=R.mgB, 
@@ -177,6 +178,14 @@ pvarx.VEC <- function(L.data, lags, dim_r,
   L.D2    = aux_check(D2, "D1", dim_N, names_i)
   if( is.null(names_i) ){ names_i = 1:dim_N }
   
+  if(is.null(idx_pool)){
+    name_MG = "MG of rank-restricted VAR"
+    name_ec = "RRR"
+  }else{
+    name_MG = "PMG of rank-restricted VAR" 
+    name_ec = "GLS"
+  }
+  
   # estimate individual VECM (with option to pool cointegrating vectors) and their panel mean-group
   L.def = sapply(names_i, FUN=function(i) aux_stackRRR(L.y[[i]], dim_p=L.dim_p[i], type=type, t_D1=L.t_D1[[i]], t_D2=L.t_D2[[i]], D1=L.D1[[i]], D2=L.D2[[i]]), simplify=FALSE)
   R.est = aux_pvec(L.def, L.beta=NULL, dim_r=dim_r, idx_pool=idx_pool, n.factors=n.factors, n.iterations=n.iterations)  # RRR if n.factors==0 and is.null(idx_pool)
@@ -191,9 +200,8 @@ pvarx.VEC <- function(L.data, lags, dim_r,
   rvar = aux_vec2var(PI=vecm$PI, GAMMA=vecm$GAMMA$mean, dim_p=max(L.dim_p))  # rank-restricted VAR model in levels
   
   # return result
-  name_MGest = if(is.null(idx_pool)){ "MG of rank-restricted VAR" }else{ "PMG of rank-restricted VAR" }
-  args_pvarx = list(method=name_MGest, 
-                    type=type, dim_r=dim_r, dim_K=R.est$L.varx[[1]]$dim_K, dim_N=dim_N, 
+  for(i in names_i){ R.est$L.varx[[i]]$args_varx = list(method=name_ec, type=type, t_D1=L.t_D1[[i]], t_D2=L.t_D2[[i]]) }
+  args_pvarx = list(method=name_MG, type=type, dim_r=dim_r, dim_K=R.est$L.varx[[1]]$dim_K, dim_N=dim_N, 
                     idx_pool=idx_pool, n.factors=n.factors, n.iterations=n.iterations, w=NULL)
   result = list(A=rvar$A, B=R.mgB$mean, beta=vecm$beta$mean, MG_VECM=vecm, MG_B=R.mgB, 
                 L.varx=R.est$L.varx, L.data=L.data, CSD=R.est$PCA, args_pvarx=args_pvarx)
@@ -348,7 +356,7 @@ as.pvarx.default <- function(x, w=NULL, ...){
     if(is_id){
       args_pid = L.argID[[1]]
       args_pid$combine = "indiv"
-      is_iv = all(sapply(L.argID, FUN=function(x_i) x_i$method == "Proxy"))
+      is_iv = all(sapply(L.argID, FUN=function(x_i) isTRUE(x_i$method == "Proxy")))  # isTRUE: FALSE if NULL
       if(is_iv){
         args_pid$iv = NULL
         args_pid$L.iv = lapply(L.argID, FUN=function(x_i) x_i$iv)

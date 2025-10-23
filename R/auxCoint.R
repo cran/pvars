@@ -66,7 +66,7 @@ aux_stackRRR <- function(y, dim_p, x=NULL, dim_q=0, type=NULL, t_D1=list(), t_D2
   
   # return result
   rownames(Z1)[1:(dim_K+dim_L)] = paste0(rownames(Z1)[1:(dim_K+dim_L)], ".l1")
-  result = list(Z0=Z0, Z1=Z1, Z2=Z2, D1=D1, D2=D2, y=y, x=x, type=type, t_D1=t_D1, t_D2=t_D2, 
+  result = list(Z0=Z0, Z1=Z1, Z2=Z2, D1=D1, D2=D2, y=y, x=x, 
                 dim_p=dim_p, dim_q=dim_q, dim_T=dim_T, dim_K=dim_K, dim_L=dim_L)
   return(result)
 }

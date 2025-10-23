@@ -319,9 +319,9 @@ speci.VAR <- function(x, lag_set=1:10, dim_m=FALSE, trim=0.15, type_break="const
   # define admissible combinations of tau for grid search
   if(dim_m > 0){
     # check break type
-    if(type_break %in% c("const", "both") & !(x$type %in% c("const", "both"))){
+    if(type_break %in% c("const", "both") & !(x$args_varx$type %in% c("const", "both"))){
       warning("'type_break' pertains the constant, which is missing in the provided VAR model 'x'.") }
-    if(type_break %in% c("trend", "both") & !(x$type %in% c("trend", "both"))){
+    if(type_break %in% c("trend", "both") & !(x$args_varx$type %in% c("trend", "both"))){
       warning("'type_break' pertains the linear trend, which is missing in the provided VAR model 'x'.") }
     
     # check trim parameter

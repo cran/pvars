@@ -163,14 +163,14 @@ aux_stackOLS <- function(y, dim_p, x=NULL, dim_q=0, type="none", t_D=list(), D=N
   Z = aux_stack(y=y, dim_p=dim_p, x=x, dim_q=dim_q, D=D)  # regressors
   
   # return result
-  result = list(Y=Y, Z=Z, D=D, y=y, x=x, type=type, t_D=t_D, 
-                dim_p=dim_p, dim_q=dim_q, dim_T=dim_T, dim_K=dim_K, dim_L=dim_L, dim_Kpn=nrow(Z))
+  result = list(Y=Y, Z=Z, D=D, y=y, x=x, dim_p=dim_p, dim_q=dim_q, 
+                dim_T=dim_T, dim_K=dim_K, dim_L=dim_L, dim_Kpn=nrow(Z))
   return(result)
 }
 
 
 # estimate VARX(p,q) model, from Luetkepohl 2005:396, Eq.10.3.3
-aux_VARX <- function(y=NULL, dim_p=0, x=NULL, dim_q=0, type="none", t_D=list(), D=NULL){
+aux_VARX <- function(y=NULL, dim_p=0, x=NULL, dim_q=0, type="none", t_D=list(), D=NULL, method="solve"){
   # define
   def = aux_stackOLS(y=y, dim_p=dim_p, x=x, dim_q=dim_q, type=type, t_D=t_D, D=D)
   dim_T   = def$dim_T    # number of observations without presample
@@ -178,15 +178,25 @@ aux_VARX <- function(y=NULL, dim_p=0, x=NULL, dim_q=0, type="none", t_D=list(), 
   Y = def$Y  # regressands
   Z = def$Z  # regressors
   
-  # product moment matrices
-  YZ    = tcrossprod(Y, Z)  # = Y%*%t(Z)
-  ZZinv = solve(tcrossprod(Z))
-  
-  # estimate
-  A = YZ %*% ZZinv  # multivariate OLS estimator
-  resid = Y - A %*% Z   # residuals
-  OMEGA = tcrossprod(resid) / dim_T        # MLE covariance matrix of residuals
-  SIGMA = OMEGA * (dim_T/(dim_T-dim_Kpn))  # OLS covariance matrix of residuals
+  # estimate by multivariate OLS
+  if(method=="solve"){
+    # ... using inverse of product moment matrix
+    YZ    = tcrossprod(Y, Z)  # = Y%*%t(Z)
+    ZZinv = solve(tcrossprod(Z))  # inverse moment matrix
+    A     = YZ %*% ZZinv  # multivariate OLS estimator
+    resid = Y - A %*% Z   # residuals
+    OMEGA = tcrossprod(resid) / dim_T        # MLE covariance matrix of residuals
+    SIGMA = OMEGA * (dim_T/(dim_T-dim_Kpn))  # OLS covariance matrix of residuals
+    
+  }else if(method=="qr"){
+    # ... using QR decomposition with column pivoting
+    R.lm  = .lm.fit(x=t(Z), y=t(Y))
+    A     = t(R.lm$coefficients);  dimnames(A) = list(rownames(Y), rownames(Z))
+    resid = t(R.lm$residuals); dimnames(resid) = dimnames(Y)
+    OMEGA = tcrossprod(resid) / dim_T        # MLE covariance matrix of residuals
+    SIGMA = OMEGA * (dim_T/(dim_T-dim_Kpn))  # OLS covariance matrix of residuals
+    
+  }else{ stop("Argument 'method' must be either 'solve' or 'qr' to call .lm.fit().") }
   
   # return result
   result = c(list(A=A, OMEGA=OMEGA, SIGMA=SIGMA, resid=resid), def)

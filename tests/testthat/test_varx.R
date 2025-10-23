@@ -77,7 +77,7 @@ test_that("VECM() can reproduce basic examples from urca package
   R.D2  = t(aux_dummy(dim_T=nrow(sjd), t_blip=40, t_impulse=c(10+0:3, 30), t_shift=10, n.season=4))
   dim_p = 4
   
-  R.cajo_D2 = urca::ca.jo(sjd, ecdet="trend", type="trace", K=dim_p, spec="transitory", dumvar=R.D2)
+  R.cajo_D2 = urca::ca.jo(sjd, ecdet="trend", type="trace", K=dim_p, spec="transitory", dumvar=R.D2) # uses lm()
   ### R.vecm_urca_D2 = urca::cajorls(R.cajo_D2, r=dim_r)
   R.vars_D2 = vars::vec2var(R.cajo_D2, r=dim_r)
   R.vecm_D2 = VECM(y=sjd, dim_r=dim_r, dim_p=dim_p, type="Case4", D2=R.D2)
@@ -94,11 +94,10 @@ test_that("auxVAR modules can reproduce OLS examples from vars package.", {
   library("vars")
   data(Canada)
   dim_T = nrow(Canada)  # number of observations including presample
-  to_resid = 2.8e-05  # VAR() is based on equation-wise lm().
   tolerant = 3.8e-08
   
   for(dim_p in 1:10){ # lag-order of the endogenous variables
-    # stack operators #
+    # stack operators (for "const") #
     Y = t(Canada)[c(1,3,4),-(1:dim_p)]
     D = aux_dummy(dim_T=dim_T, center=TRUE, n.season=4, type="const")
     Z = aux_stack(y=Canada[ ,c(1,3,4)], dim_p=dim_p, x=Canada[ , 2, drop=FALSE], dim_q=0, D=D)
@@ -113,20 +112,20 @@ test_that("auxVAR modules can reproduce OLS examples from vars package.", {
     expect_identical(Y, R.def$Y)
     expect_identical(Z, R.def$Z)
     
-    # multivariate OLS estimation #
+    # multivariate OLS estimation using QR decomposition with column pivoting (for "both") #
     R.sens = aux_dummy(dim_T=dim_T, center=TRUE, n.season=4)
-    R.varx = aux_VARX(y=Canada[, -2], dim_p=dim_p, x=Canada[ , 2, drop=FALSE], dim_q=0, type="both", D=R.sens)
+    R.varx = aux_VARX(y=Canada[, -2], dim_p=dim_p, x=Canada[ , 2, drop=FALSE], dim_q=0, type="both", D=R.sens, method="qr")
     R.vars = vars::VAR(y=Canada[,-2], p=dim_p, type="both", exogen=Canada[ , 2, drop=FALSE], season=4)
     
-    our_resid  = unname(R.varx$resid)
-    varx_resid = unname(as.varx(R.vars)$resid)  # coerce the VAR to varx object first
-    vars_resid = unname(t(resid(R.vars)))
-    expect_equal(our_resid, vars_resid, tolerance = to_resid)
-    expect_equal(our_resid, varx_resid, tolerance = to_resid)
+    our_resid  = R.varx$resid
+    varx_resid = as.varx(R.vars)$resid  # coerce the VAR to varx object first
+    vars_resid = t(resid(R.vars))
+    expect_equivalent(our_resid, vars_resid)
+    expect_equivalent(our_resid, varx_resid)
     
     our_slp  = R.varx$A[ , c(names_slp, "prod.l0"), drop=FALSE]
     vars_slp = t(sapply(R.vars$varresult, FUN = function(k) k$coefficients))[ , c(names_slp, "prod")]
-    expect_equivalent(our_slp, vars_slp, tolerance = tolerant)  # Differing base season has no effect on slope coefficients!
+    expect_equivalent(our_slp, vars_slp)  # Differing base season has no effect on slope coefficients!
   }
   
   # roots of the companion matrix #
@@ -142,22 +141,19 @@ test_that("auxVAR modules can reproduce OLS examples from vars package.", {
   Y = t(Canada)[,-(1:lag_max)]
   dim_T = ncol(Y)
   for(p in 1:lag_max){
-    idx = (lag_max+1-p):nrow(Canada)
-    Z = aux_stack(t(Canada)[ ,idx], dim_p=p, D=t(rep(1, dim_T)))
-    B = Y%*%t(Z) %*% solve(Z%*%t(Z))
-    e = Y - B%*%Z
-    Ucov = e%*%t(e)/dim_T
-    IC_p = aux_MIC(Ucov, COEF=B, dim_T, lambda_H0=NULL)
+    idx_t = (lag_max+1-p):nrow(Canada)
+    R.var = aux_VARX(t(Canada)[ ,idx_t], dim_p=p, type="const", method="qr")
+    R.ICp = aux_MIC(R.var$OMEGA, COEF=R.var$A, dim_T, lambda_H0=NULL)
     
-    R.criteria = cbind(R.criteria, IC_p)
-    rm(idx, Z, B, e, Ucov, IC_p)
+    R.criteria = cbind(R.criteria, R.ICp)
+    rm(idx_t, R.var, R.ICp)
   }
   R.selection = apply(R.criteria, MARGIN=1, function(x) which.min(x))
   
   ours   = list(selection=R.selection, criteria=R.criteria)
   theirs = vars::VARselect(y=Canada, lag.max=4, type="const")
-  expect_equivalent(ours$selection, theirs$selection, tolerance = tolerant)
-  expect_equivalent(ours$criteria,  theirs$criteria,  tolerance = tolerant)
+  expect_equivalent(ours$selection, theirs$selection)
+  expect_equivalent(ours$criteria,  theirs$criteria)
 })
 
 
@@ -168,6 +164,7 @@ test_that("aux_vec2vma() provides the correct long-run multiplier matrix XI
   names_k = c("g", "k", "l", "y") # variable names
   data_i  = ts(PCAP[PCAP$id_i=="DEU", names_k], start=1960, end=2019, frequency=1)
   x2 = urca::ca.jo(data_i, ecdet="trend", type="trace", K=2, spec="transitory")
+  tolerant = 5e-05
   
   for(dim_r in 1:3){
     # define #
@@ -186,7 +183,7 @@ test_that("aux_vec2vma() provides the correct long-run multiplier matrix XI
     K <- x2@P
     P <- x2@lag - 1
     IK <- diag(K)
-    vecr <- urca::cajorls(z = x2, r = r)
+    vecr <- urca::cajorls(z = x2, r = r)  # uses lm()
     
     # calculate long-run multiplier matrix, code chunk from vars::SVEC() #
     Coef.vecr <- coef(vecr$rlm)
@@ -199,7 +196,7 @@ test_that("aux_vec2vma() provides the correct long-run multiplier matrix XI
     vars_Xi <- beta.orth %*% solve(t(alpha.orth) %*% (IK - Gamma) %*% beta.orth) %*% t(alpha.orth)  
     
     # check #
-    expect_equivalent(our_XI, vars_Xi)
+    expect_equivalent(our_XI, vars_Xi, tolerance = tolerant)
   }
 })
 

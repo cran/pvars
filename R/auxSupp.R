@@ -5,8 +5,8 @@
 # Roxygen: https://r-pkgs.org/man.html#man-s3
 
 #' @title Deterministic regressors in \strong{pvars}
-#' @description \strong{pvars} defines three kind of deterministic regressors, 
-#'   namely the \strong{\emph{conventional}} '\code{type}', \strong{\emph{customized}} 
+#' @description Deterministic regressors can be specified via the arguments of
+#'   the \strong{\emph{conventional}} '\code{type}', \strong{\emph{customized}} 
 #'   '\code{D}', and \strong{\emph{period-specific}} '\code{t_D}'. 
 #'   While '\code{type}' is a single character and 
 #'   '\code{D}' a data matrix of dimension \eqn{(n_{\bullet} \times (p+T))}, 
@@ -356,7 +356,7 @@ aux_rm_Dnl <- function(x, dim_p, t_D1, t_D2, MARGIN=1){
       idx_Dnl = which(colnames(x) %in% names_Dnl)
       return(x[ ,-idx_Dnl, drop=FALSE])
     }else{
-      stop("Argument 'MARGIN' must be an integer of either 1 for rows or 2 for columns!")
+      stop("Argument 'MARGIN' must be an integer of either 1 for rows or 2 for columns.")
     }
   }
 }

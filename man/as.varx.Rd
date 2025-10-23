@@ -17,6 +17,8 @@ A list of class '\code{varx}'. Objects of this class contain the elements:
   lagged variables.}
 \item{B}{Matrix. The \eqn{(K \times S)} structural impact matrix of the SVAR model 
   or an identity matrix \eqn{I_K} as a placeholder for the unidentified VAR model.}
+\item{beta}{Matrix. The \eqn{((K+n_{d1}) \times r)} cointegrating matrix of the VAR model 
+  if transformed from a rank-restricted VECM.}
 \item{SIGMA}{Matrix. The \eqn{(K \times K)} residual covariance matrix estimated by least-squares.}
   The following integers indicate the size of dimensions:
 \item{dim_K}{Integer. The number of endogenous variables \eqn{K} in the full-system.}
@@ -32,8 +34,8 @@ A list of class '\code{varx}'. Objects of this class contain the elements:
   (un)restricted to the cointegration relations of the VAR model 
   if transformed from a rank-restricted VECM.}
 \item{resid}{Matrix. The \eqn{(K \times T)} residual matrix.}
-\item{beta}{Matrix. The \eqn{((K+n_{d1}) \times r)} cointegrating matrix of the VAR model 
-  if transformed from a rank-restricted VECM.}
+\item{args_varx}{List of characters and integers indicating the estimator 
+  and specifications that have been used.} 
 \item{args_id}{List of characters and integers indicating the identification 
   methods and specifications that have been used. This element is specific 
   to the child-class '\code{id}' for SVAR models, that inherit from

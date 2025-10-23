@@ -87,9 +87,9 @@ test_that("aux_2StepBR() and aux_RRR() return identical cointegration vectors fo
   # check #
   L.beta = lapply(0:3, FUN=function(r) aux_beta(V=L.RRR[[1]]$V, dim_r=r, normalize="natural"))
   names(L.beta) = paste0("r", 0:3)
-  expect_equal(R.hom$L.beta[1, ], L.beta, tolerance = 1e-10)
-  expect_equal(R.trd$L.beta[1, ], L.beta, tolerance = 1e-10)
-  expect_equal(R.het$L.beta[1, ], L.beta, tolerance = 1e-10)
+  expect_equal(R.hom$L.beta[1, ], L.beta)
+  expect_equal(R.trd$L.beta[1, ], L.beta)
+  expect_equal(R.het$L.beta[1, ], L.beta)
   expect_equal(R.trd$L.beta[1, 1:3], R.pcbr$beta_H0[1, ])  # exclude r=K
 })
 

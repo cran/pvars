@@ -26,8 +26,8 @@ A list of class '\code{t_D}' specifying \eqn{\tau}.
 \item{n.season}{Integer. The number of seasons.}
 }
 \description{
-\strong{pvars} defines three kind of deterministic regressors, 
-  namely the \strong{\emph{conventional}} '\code{type}', \strong{\emph{customized}} 
+Deterministic regressors can be specified via the arguments of
+  the \strong{\emph{conventional}} '\code{type}', \strong{\emph{customized}} 
   '\code{D}', and \strong{\emph{period-specific}} '\code{t_D}'. 
   While '\code{type}' is a single character and 
   '\code{D}' a data matrix of dimension \eqn{(n_{\bullet} \times (p+T))}, 

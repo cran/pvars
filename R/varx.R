@@ -112,11 +112,11 @@ VECM <- function(y, dim_p, x=NULL, dim_q=dim_p, dim_r=NULL, beta=NULL,
   }
   
   # return result
+  argues = list(method="RRR", type=type, t_D1=t_D1, t_D2=t_D2)
   result = list(A=rvar$A, B=B, y=def$y, x=def$x, D1=def$D1, D2=def$D2, 
-                RRR=RRR, beta=beta, VECM=vecm, 
-                resid=vecm$resid, OMEGA=vecm$OMEGA, SIGMA=vecm$SIGMA, 
+                RRR=RRR, beta=beta, VECM=vecm, resid=vecm$resid, OMEGA=vecm$OMEGA, SIGMA=vecm$SIGMA, 
                 dim_r=dim_r, dim_K=dim_K, dim_L=dim_L, dim_T=dim_T, dim_p=dim_p, dim_q=dim_q,
-                type=type, t_D1=t_D1, t_D2=t_D2, PARTIAL=PARTIAL, MARGINAL=MARGINAL)
+                PARTIAL=PARTIAL, MARGINAL=MARGINAL, args_varx=argues)
   class(result) = "varx"
   return(result)
 }
@@ -155,7 +155,7 @@ summary.varx <- function(object, ...){
   # print
   print.varx(object, ...)
   cat("\n", paste0(c("Specifications", rep(".", times=20))), sep="", "\n")
-  cat("Deterministic term: ", object$type, "\n")
+  cat("Deterministic term: ", object$args_varx$type, "\n")
   if(!is.null(object$args_id)){
     cat("Method: ", object$args_id$method, "\n")
   if(!is.null(object$beta)){
@@ -200,6 +200,8 @@ summary.varx <- function(object, ...){
 #'   lagged variables.}
 #' \item{B}{Matrix. The \eqn{(K \times S)} structural impact matrix of the SVAR model 
 #'   or an identity matrix \eqn{I_K} as a placeholder for the unidentified VAR model.}
+#' \item{beta}{Matrix. The \eqn{((K+n_{d1}) \times r)} cointegrating matrix of the VAR model 
+#'   if transformed from a rank-restricted VECM.}
 #' \item{SIGMA}{Matrix. The \eqn{(K \times K)} residual covariance matrix estimated by least-squares.}
 #'   The following integers indicate the size of dimensions:
 #' \item{dim_K}{Integer. The number of endogenous variables \eqn{K} in the full-system.}
@@ -215,8 +217,8 @@ summary.varx <- function(object, ...){
 #'   (un)restricted to the cointegration relations of the VAR model 
 #'   if transformed from a rank-restricted VECM.}
 #' \item{resid}{Matrix. The \eqn{(K \times T)} residual matrix.}
-#' \item{beta}{Matrix. The \eqn{((K+n_{d1}) \times r)} cointegrating matrix of the VAR model 
-#'   if transformed from a rank-restricted VECM.}
+#' \item{args_varx}{List of characters and integers indicating the estimator 
+#'   and specifications that have been used.} 
 #' \item{args_id}{List of characters and integers indicating the identification 
 #'   methods and specifications that have been used. This element is specific 
 #'   to the child-class '\code{id}' for SVAR models, that inherit from
@@ -290,8 +292,9 @@ as.varx.varest <- function(x, ...){
   SIGMA = OMEGA * (dim_T/(dim_T-ncol(A)))  # OLS covariance matrix of residuals
   
   # return result
+  argues = list(method="qr", type=type)
   result = list(A=A, B=diag(dim_K), y=y, D=D, resid=resid, SIGMA=SIGMA, OMEGA=OMEGA, 
-                dim_K=dim_K, dim_T=dim_T, dim_p=dim_p, type=type)
+                dim_K=dim_K, dim_T=dim_T, dim_p=dim_p, args_varx=argues)
   class(result) = "varx"
   return(result)
 }
@@ -318,9 +321,10 @@ as.varx.vec2var <- function(x, ...){
   
   # return result
   if(x$vecm@spec == "longrun"){ warning("The VECM has been re-specified into 'transitory' form.") }
+  argues = list(method="RRR", type=type)
   result = list(A=rvar$A, B=diag(dim_K), y=y, D1=def$D1, D2=def$D2, RRR=RRR, beta=beta, VECM=vecm,
                 resid=vecm$resid, SIGMA=vecm$SIGMA, OMEGA=vecm$OMEGA, 
-                dim_r=dim_r, dim_K=dim_K, dim_T=dim_T, dim_p=dim_p, type=type)
+                dim_r=dim_r, dim_K=dim_K, dim_T=dim_T, dim_p=dim_p, args_varx=argues)
   class(result) = "varx"
   return(result)
 }

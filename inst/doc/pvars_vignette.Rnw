@@ -7,5 +7,5 @@
 %source(~/inst/examples/pvars_reproduce.R)
 %@
 
-%% Wrapper to compile static article %%
+%% Wrapper to compile static article from ~/vignettes/ %%
 \input{pvars_article.tex}

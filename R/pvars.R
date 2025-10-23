@@ -5,7 +5,7 @@
 #########################
 
 #' @import svars
-#' @importFrom stats coef cor cov var quantile optim resid residuals
+#' @importFrom stats .lm.fit coef cor cov var quantile optim resid residuals
 #' @importFrom stats pchisq pf pgamma pnorm qnorm rnorm
 #' @importFrom utils combn head tail toLatex
 NULL 
